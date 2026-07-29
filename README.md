@@ -5,7 +5,6 @@ This is an e-commerce web application built with the MERN (MongoDB, Express.js, 
 
 Features
 --------
-
 *   **User Authentication**: Secure login and signup functionality.
     
 *   **Product Search**: Search products and view product details.

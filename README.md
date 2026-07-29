@@ -1,7 +1,7 @@
 E-Commerce Web Application
 ==========================
 
-This is an e-commerce web application built with the MERN (MongoDB, Express.js, React.js, Node.js) stack. The application includes features like user authentication, product search, cart management, and handling of ordered and refunded products.
+This is an e-commerce web application built with the MERN (MongoDB, Express.js, React.js, Node.js) stack.The application includes features like user authentication, product search, cart management, and handling of ordered and refunded products.
 
 Features
 --------

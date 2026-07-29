@@ -14,7 +14,7 @@ services:
     image: localhost:5000/ecommerce-backend:latest
     container_name: ecommerce-backend
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       MONGODB_URL: mongodb://mongo:27017/ecommerce
       RAZORPAY_KEY: your_key

@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: localhost:5000/ecommerce-frontend:latest
+    image: localhost:5000/ecommerce-frontend:${TAG}
     container_name: ecommerce-frontend
     ports:
       - "3000:80"
@@ -11,7 +11,7 @@ services:
       - ecommerce-net
 
   backend:
-    image: localhost:5000/ecommerce-backend:latest
+    image: localhost:5000/ecommerce-backend:${TAG}
     container_name: ecommerce-backend
     ports:
       - "5001:5000"
@@ -41,4 +41,3 @@ networks:
 
 volumes:
   mongo_data:
-

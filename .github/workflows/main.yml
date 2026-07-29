@@ -10,28 +10,37 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Generate Image Tag
+        run: |
+          echo "TAG=$(date +'%d%m%y')" >> $GITHUB_ENV
 
       - name: Build Frontend
         run: |
-          docker build -t localhost:5000/ecommerce-frontend:latest ./client
+          docker build -t localhost:5000/ecommerce-frontend:${{ env.TAG }} ./client
 
       - name: Build Backend
         run: |
-          docker build -t localhost:5000/ecommerce-backend:latest ./server
+          docker build -t localhost:5000/ecommerce-backend:${{ env.TAG }} ./server
 
       - name: Push Images
         run: |
-          docker push localhost:5000/ecommerce-frontend:latest
-          docker push localhost:5000/ecommerce-backend:latest
+          docker push localhost:5000/ecommerce-frontend:${{ env.TAG }}
+          docker push localhost:5000/ecommerce-backend:${{ env.TAG }}
+
+      - name: Wait
+        run: sleep 20
 
       - name: Deploy
         run: |
+          export TAG=${{ env.TAG }}
           docker compose down
-          docker compose pull
           docker compose up -d
 
-      - name: Clean Old Images
-        run: |
-          docker image prune -af
+      - name: Wait for Containers
+        run: sleep 30
+
+      - name: Verify Containers
+        run: docker ps

@@ -1,0 +1,34 @@
+name: Build and Push to Local Registry
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Frontend Image
+        run: |
+          docker build -t localhost:5000/ecommerce-frontend:latest ./client
+
+      - name: Push Frontend Image
+        run: |
+          docker push localhost:5000/ecommerce-frontend:latest
+
+      - name: Build Backend Image
+        run: |
+          docker build -t localhost:5000/ecommerce-backend:latest ./server
+
+      - name: Push Backend Image
+        run: |
+          docker push localhost:5000/ecommerce-backend:latest
+
+      - name: Verify Registry
+        run: |
+          curl http://localhost:5000/v2/_catalog

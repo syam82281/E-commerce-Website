@@ -1,17 +1,18 @@
-version: "3.9"
-
 services:
   frontend:
-    build: ./client
+    image: localhost:5000/ecommerce-frontend:latest
+    container_name: ecommerce-frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
+    restart: always
     networks:
       - ecommerce-net
 
   backend:
-    build: ./server
+    image: localhost:5000/ecommerce-backend:latest
+    container_name: ecommerce-backend
     ports:
       - "5000:5000"
     environment:
@@ -20,16 +21,18 @@ services:
       RAZORPAY_SECRET: your_secret
     depends_on:
       - mongo
+    restart: always
     networks:
       - ecommerce-net
 
   mongo:
-    image: mongo
+    image: mongo:latest
     container_name: ecommerce-mongo
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    restart: always
     networks:
       - ecommerce-net
 

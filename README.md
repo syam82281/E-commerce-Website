@@ -115,7 +115,7 @@ POSTMAN LINK - https://www.postman.com/roy707/workspace/shop-cart/collection/326
 Contribution
 ------------
 
-Feel free to submit issues or pull requests if you have suggestions or improvements.
+Feel free to submit issues or pull requests if you have suggestions or improvements..
 
 License
 -------

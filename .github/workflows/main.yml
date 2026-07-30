@@ -15,13 +15,13 @@ jobs:
 
       - name: Generate Image Tag
         run: |
-          echo "TAG=$(date +'%d%m%y')" >> $GITHUB_ENV
+          echo "TAG=$(date +'%d%m%y-%H%M%S')" >> $GITHUB_ENV
 
-      - name: Build Frontend
+      - name: Build Frontend Image
         run: |
           docker build -t localhost:5000/ecommerce-frontend:${{ env.TAG }} ./client
 
-      - name: Build Backend
+      - name: Build Backend Image
         run: |
           docker build -t localhost:5000/ecommerce-backend:${{ env.TAG }} ./server
 
@@ -35,7 +35,7 @@ jobs:
 
       - name: Deploy with Helm
         run: |
-          helm upgrade --install ecommerce ./ecommerce-chart \
+          sudo helm upgrade --install ecommerce ./ecommerce-chart \
             --namespace ecommerce \
             --create-namespace \
             --set frontend.image.repository=localhost:5000/ecommerce-frontend \
@@ -45,20 +45,20 @@ jobs:
 
       - name: Wait for Frontend Rollout
         run: |
-          kubectl rollout status deployment/frontend -n ecommerce
+          sudo kubectl rollout status deployment/frontend -n ecommerce
 
       - name: Wait for Backend Rollout
         run: |
-          kubectl rollout status deployment/backend -n ecommerce
+          sudo kubectl rollout status deployment/backend -n ecommerce
 
       - name: Verify Pods
         run: |
-          kubectl get pods -n ecommerce
+          sudo kubectl get pods -n ecommerce
 
       - name: Verify Services
         run: |
-          kubectl get svc -n ecommerce
+          sudo kubectl get svc -n ecommerce
 
       - name: Verify Helm Release
         run: |
-          helm list -n ecommerce
+          sudo helm list -n ecommerce

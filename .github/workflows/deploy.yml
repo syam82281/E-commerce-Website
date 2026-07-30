@@ -9,83 +9,87 @@ jobs:
   deploy:
     runs-on: self-hosted
 
-    steps:
+    env:
+      REGISTRY: localhost:5000
+      IMAGE_TAG: ${{ github.sha }}
 
-      # Checkout Repository
+    steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Check Docker
       - name: Check Docker
         run: docker version
 
-      # Check Kubernetes
       - name: Check Kubernetes
         run: kubectl get nodes
 
-      # Check Helm
-      - name: Check Helm
-        run: helm version
-
-      # Build Frontend Docker Image
-      - name: Build Frontend Docker Image
+      - name: Build Frontend Image
         run: |
           docker build \
-            -t localhost:5000/ecommerce-frontend:${{ github.sha }} \
-            -t localhost:5000/ecommerce-frontend:latest \
+            -t $REGISTRY/ecommerce-frontend:$IMAGE_TAG \
+            -t $REGISTRY/ecommerce-frontend:latest \
             ./client
 
-      # Build Backend Docker Image
-      - name: Build Backend Docker Image
+      - name: Build Backend Image
         run: |
           docker build \
-            -t localhost:5000/ecommerce-backend:${{ github.sha }} \
-            -t localhost:5000/ecommerce-backend:latest \
+            -t $REGISTRY/ecommerce-backend:$IMAGE_TAG \
+            -t $REGISTRY/ecommerce-backend:latest \
             ./server
 
-      # Push Frontend Image
       - name: Push Frontend Image
         run: |
-          docker push localhost:5000/ecommerce-frontend:${{ github.sha }}
-          docker push localhost:5000/ecommerce-frontend:latest
+          docker push $REGISTRY/ecommerce-frontend:$IMAGE_TAG
+          docker push $REGISTRY/ecommerce-frontend:latest
 
-      # Push Backend Image
       - name: Push Backend Image
         run: |
-          docker push localhost:5000/ecommerce-backend:${{ github.sha }}
-          docker push localhost:5000/ecommerce-backend:latest
+          docker push $REGISTRY/ecommerce-backend:$IMAGE_TAG
+          docker push $REGISTRY/ecommerce-backend:latest
 
-      # Deploy Application with Helm
-      - name: Deploy Application
+      - name: Create Namespace (if needed)
         run: |
-          helm upgrade --install ecommerce ./ecommerce-chart \
-            --namespace ecommerce \
-            --create-namespace \
-            --set frontend.image.repository=localhost:5000/ecommerce-frontend \
-            --set frontend.image.tag=${{ github.sha }} \
-            --set backend.image.repository=localhost:5000/ecommerce-backend \
-            --set backend.image.tag=${{ github.sha }}
+          kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
 
-      # Wait for Frontend Deployment
-      - name: Wait for Frontend
-        run: kubectl rollout status deployment/frontend -n ecommerce
+      - name: Apply Kubernetes Manifests
+        run: |
+          kubectl apply -f k8s/
 
-      # Wait for Backend Deployment
-      - name: Wait for Backend
-        run: kubectl rollout status deployment/backend -n ecommerce
+      - name: Update Backend Image
+        run: |
+          kubectl set image deployment/backend \
+            backend=$REGISTRY/ecommerce-backend:$IMAGE_TAG \
+            -n ecommerce
 
-      # Check Pods
-      - name: Check Pods
-        run: kubectl get pods -n ecommerce
+      - name: Update Frontend Image
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=$REGISTRY/ecommerce-frontend:$IMAGE_TAG \
+            -n ecommerce
 
-      # Check Services
-      - name: Check Services
-        run: kubectl get svc -n ecommerce
+      - name: Wait for Backend Rollout
+        run: |
+          kubectl rollout status deployment/backend -n ecommerce --timeout=180s
 
-      # Check Helm Release
-      - name: Check Helm Release
-        run: helm list -n ecommerce
+      - name: Wait for Frontend Rollout
+        run: |
+          kubectl rollout status deployment/frontend -n ecommerce --timeout=180s
 
-      # Remove Unused Docker Images
+      - name: Show Pods
+        run: |
+          kubectl get pods -n ecommerce -o wide
+
+      - name: Show Services
+        run: |
+          kubectl get svc -n ecommerce
+
+      - name: Show Deployment Images
+        run: |
+          kubectl get deployment backend -n ecommerce -o=jsonpath='{.spec.template.spec.containers[0].image}'
+          echo
+          kubectl get deployment frontend -n ecommerce -o=jsonpath='{.spec.template.spec.containers[0].image}'
+          echo
+
       - name: Clean Docker Images
-        run: docker image prune -af
+        run: |
+          docker image prune -af

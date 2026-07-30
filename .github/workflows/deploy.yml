@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: E-commerce CI/CD Pipeline
 
 on:
   push:
@@ -10,21 +10,82 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+
+      # Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Build Frontend
-        run: docker build -t localhost:5000/ecommerce-frontend:latest ./client
+      # Check Docker
+      - name: Check Docker
+        run: docker version
 
-      - name: Build Backend
-        run: docker build -t localhost:5000/ecommerce-backend:latest ./server
+      # Check Kubernetes
+      - name: Check Kubernetes
+        run: kubectl get nodes
 
-      - name: Push Images
+      # Check Helm
+      - name: Check Helm
+        run: helm version
+
+      # Build Frontend Docker Image
+      - name: Build Frontend Docker Image
         run: |
+          docker build \
+            -t localhost:5000/ecommerce-frontend:${{ github.sha }} \
+            -t localhost:5000/ecommerce-frontend:latest \
+            ./client
+
+      # Build Backend Docker Image
+      - name: Build Backend Docker Image
+        run: |
+          docker build \
+            -t localhost:5000/ecommerce-backend:${{ github.sha }} \
+            -t localhost:5000/ecommerce-backend:latest \
+            ./server
+
+      # Push Frontend Image
+      - name: Push Frontend Image
+        run: |
+          docker push localhost:5000/ecommerce-frontend:${{ github.sha }}
           docker push localhost:5000/ecommerce-frontend:latest
+
+      # Push Backend Image
+      - name: Push Backend Image
+        run: |
+          docker push localhost:5000/ecommerce-backend:${{ github.sha }}
           docker push localhost:5000/ecommerce-backend:latest
 
-      - name: Restart Containers
+      # Deploy Application with Helm
+      - name: Deploy Application
         run: |
-          docker compose down
-          docker compose up -d
+          helm upgrade --install ecommerce ./ecommerce-chart \
+            --namespace ecommerce \
+            --create-namespace \
+            --set frontend.image.repository=localhost:5000/ecommerce-frontend \
+            --set frontend.image.tag=${{ github.sha }} \
+            --set backend.image.repository=localhost:5000/ecommerce-backend \
+            --set backend.image.tag=${{ github.sha }}
+
+      # Wait for Frontend Deployment
+      - name: Wait for Frontend
+        run: kubectl rollout status deployment/frontend -n ecommerce
+
+      # Wait for Backend Deployment
+      - name: Wait for Backend
+        run: kubectl rollout status deployment/backend -n ecommerce
+
+      # Check Pods
+      - name: Check Pods
+        run: kubectl get pods -n ecommerce
+
+      # Check Services
+      - name: Check Services
+        run: kubectl get svc -n ecommerce
+
+      # Check Helm Release
+      - name: Check Helm Release
+        run: helm list -n ecommerce
+
+      # Remove Unused Docker Images
+      - name: Clean Docker Images
+        run: docker image prune -af

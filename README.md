@@ -18,7 +18,6 @@ Features
 
 Tech Stack
 ----------
-
 *   **Frontend**: React.js
     
 *   **Backend**: Node.js, Express.js , Razorpay
